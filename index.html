@@ -5,19 +5,17 @@
 <title>RIPZ Raiders — Explorable</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <style>
-  body { margin:0; background:#0d0e12; color:#f5f0e6; font-family:system-ui,sans-serif; overflow:hidden; }
-  #game { display:block; margin:0 auto; background:#1a1c24; }
-  #ui { position:fixed; bottom:10px; left:0; right:0; text-align:center; pointer-events:none; }
-  #log { background:rgba(0,0,0,0.7); padding:8px 12px; border-radius:8px; display:inline-block; max-width:90%; font-size:14px; }
-  button { pointer-events:auto; margin:4px; padding:10px 16px; background:#c9a227; color:#111; border:none; border-radius:8px; font-weight:600; }
-  #battle-ui { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); padding:20px; }
+  body { margin:0; background:#0d0e12; color:#f5f0e6; font-family:system-ui,sans-serif; overflow:hidden; touch-action:none; }
+  #game { display:block; margin:0 auto; background:#1a2a1a; image-rendering:pixelated; }
+  #ui { position:fixed; bottom:8px; left:0; right:0; text-align:center; pointer-events:none; }
+  #log { background:rgba(0,0,0,0.75); padding:8px 14px; border-radius:8px; display:inline-block; max-width:92%; font-size:14px; }
+  #battle-ui { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); padding:20px; text-align:center; }
+  button { pointer-events:auto; margin:6px; padding:12px 18px; background:#c9a227; color:#111; border:none; border-radius:8px; font-weight:700; font-size:16px; }
 </style>
 </head>
 <body>
 <canvas id="game"></canvas>
-<div id="ui">
-  <div id="log">Walk around with arrow keys or WASD. Approach the scalper.</div>
-</div>
+<div id="ui"><div id="log">Arrow keys / WASD or drag to move. Walk into the scalper.</div></div>
 <div id="battle-ui">
   <h2 id="btitle">Battle</h2>
   <p id="blog"></p>
@@ -30,24 +28,45 @@
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 canvas.width = Math.min(window.innerWidth, 480);
-canvas.height = Math.min(window.innerHeight - 80, 640);
+canvas.height = Math.min(window.innerHeight - 70, 640);
+ctx.imageSmoothingEnabled = false;
 
 const TILE = 32;
-const mapW = 16, mapH = 12;
-let player = { x: 4*TILE, y: 6*TILE, w: 24, h: 24, speed: 2 };
+let player = { x: 5*TILE, y: 7*TILE, w: 24, h: 24, speed: 2.2, dir: 0 };
 let keys = {};
-let npcs = [
-  { x: 10*TILE, y: 4*TILE, w: 28, h: 28, type: 'scalper', talked: false }
-];
+let npcs = [{ x: 11*TILE, y: 4*TILE, w: 26, h: 26, type: 'scalper', talked: false }];
 let inBattle = false;
 let playerHp = 30, enemyHp = 35;
 
-function draw() {
-  ctx.fillStyle = '#2a3a2a';
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-  for (let y=0; y<mapH; y++) {
-    for (let x=0; x<mapW; x++) {
-      ctx.fillStyle = (x+y)%2===0 ? '#3a4a3a' : '#2f3f2f';
+function drawPlayer(x, y) {
+  ctx.fillStyle = '#e75492';
+  ctx.fillRect(x+6, y+8, 12, 14);
+  ctx.fillStyle = '#f0d060';
+  ctx.fillRect(x+4, y+2, 16, 8);
+  ctx.fillStyle = '#111';
+  ctx.fillRect(x+7, y+5, 3, 3);
+  ctx.fillRect(x+14, y+5, 3, 3);
+  ctx.fillStyle = '#c9a227';
+  ctx.fillRect(x+8, y+22, 4, 6);
+  ctx.fillRect(x+12, y+22, 4, 6);
+}
+
+function drawScalper(x, y) {
+  ctx.fillStyle = '#222';
+  ctx.fillRect(x+4, y+4, 18, 20);
+  ctx.fillStyle = '#444';
+  ctx.fillRect(x+6, y+2, 14, 8);
+  ctx.fillStyle = '#f5f0e6';
+  ctx.fillRect(x+8, y+6, 3, 3);
+  ctx.fillRect(x+13, y+6, 3, 3);
+  ctx.fillStyle = '#c9a227';
+  ctx.fillRect(x+9, y+12, 8, 3);
+}
+
+function drawGround() {
+  for (let y=0; y<20; y++) {
+    for (let x=0; x<15; x++) {
+      ctx.fillStyle = (x+y)%2===0 ? '#3a5a3a' : '#2f4f2f';
       ctx.fillRect(x*TILE, y*TILE, TILE, TILE);
     }
   }
@@ -56,20 +75,12 @@ function draw() {
   ctx.fillRect(0,canvas.height-TILE,canvas.width, TILE);
   ctx.fillRect(0,0,TILE,canvas.height);
   ctx.fillRect(canvas.width-TILE,0,TILE,canvas.height);
+}
 
-  npcs.forEach(n => {
-    ctx.fillStyle = n.type==='scalper' ? '#333' : '#666';
-    ctx.fillRect(n.x, n.y, n.w, n.h);
-    ctx.fillStyle = '#c9a227';
-    ctx.font = '10px sans-serif';
-    ctx.fillText('SCALPER', n.x-4, n.y-4);
-  });
-
-  ctx.fillStyle = '#e75492';
-  ctx.fillRect(player.x, player.y, player.w, player.h);
-  ctx.fillStyle = '#fff';
-  ctx.font = '10px sans-serif';
-  ctx.fillText('YOU', player.x, player.y-4);
+function draw() {
+  drawGround();
+  npcs.forEach(n => drawScalper(n.x, n.y));
+  drawPlayer(player.x, player.y);
 }
 
 function update() {
@@ -85,12 +96,11 @@ function update() {
   npcs.forEach(n => {
     const dx = (player.x + player.w/2) - (n.x + n.w/2);
     const dy = (player.y + player.h/2) - (n.y + n.h/2);
-    if (Math.hypot(dx,dy) < 40 && !n.talked) {
+    const dist = Math.hypot(dx, dy);
+    if (dist < 42 && !n.talked) {
       document.getElementById('log').textContent = 'Scalper: "Just grabbing a few packs for the kids..."';
     }
-    if (Math.hypot(dx,dy) < 28) {
-      startEncounter(n);
-    }
+    if (dist < 30) startEncounter(n);
   });
 }
 
@@ -142,23 +152,22 @@ window.addEventListener('keydown', e => keys[e.key] = true);
 window.addEventListener('keyup', e => keys[e.key] = false);
 
 let touchStart = null;
-canvas.addEventListener('touchstart', e => {
-  touchStart = e.touches[0];
-});
+canvas.addEventListener('touchstart', e => { touchStart = e.touches[0]; e.preventDefault(); }, {passive:false});
 canvas.addEventListener('touchmove', e => {
   if (!touchStart) return;
+  e.preventDefault();
   const t = e.touches[0];
   const dx = t.clientX - touchStart.clientX;
   const dy = t.clientY - touchStart.clientY;
   keys = {};
   if (Math.abs(dx) > Math.abs(dy)) {
-    if (dx > 10) keys['ArrowRight'] = true;
-    if (dx < -10) keys['ArrowLeft'] = true;
+    if (dx > 8) keys['ArrowRight'] = true;
+    if (dx < -8) keys['ArrowLeft'] = true;
   } else {
-    if (dy > 10) keys['ArrowDown'] = true;
-    if (dy < -10) keys['ArrowUp'] = true;
+    if (dy > 8) keys['ArrowDown'] = true;
+    if (dy < -8) keys['ArrowUp'] = true;
   }
-});
+}, {passive:false});
 canvas.addEventListener('touchend', () => { keys = {}; touchStart = null; });
 </script>
 </body>
