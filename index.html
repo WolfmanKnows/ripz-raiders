@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>RIPZ Raiders — ohhRIPZ</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<style>
+  :root {
+    --bg: #0d0e12;
+    --gold: #c9a227;
+    --gold-bright: #f0d060;
+    --panel: #1a1c24;
+    --text: #f5f0e6;
+    --accent: #e75492;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    min-height: 100vh;
+    overflow: hidden;
+    user-select: none;
+  }
+  #app {
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(180deg, #111318 0%, #0d0e12 100%);
+  }
+  .screen { display: none; flex: 1; flex-direction: column; padding: 16px; }
+  .screen.active { display: flex; }
+  h1, h2 { color: var(--gold-bright); text-align: center; letter-spacing: 0.5px; }
+  .logo {
+    width: 180px;
+    margin: 20px auto;
+    display: block;
+    border-radius: 12px;
+    box-shadow: 0 0 30px rgba(201,162,39,0.4);
+    background: #c9a227;
+    height: 80px;
+  }
+  .subtitle { text-align: center; color: #aaa; margin-bottom: 24px; font-size: 14px; }
+  button {
+    background: linear-gradient(180deg, #2a2d38, #1e2028);
+    border: 1px solid var(--gold);
+    color: var(--gold-bright);
+    padding: 14px 20px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    margin: 6px 0;
+    width: 100%;
+    transition: transform 0.1s, box-shadow 0.2s;
+  }
+  button:hover, button:active {
+    transform: translateY(-1px);
+    box-shadow: 0 0 16px rgba(201,162,39,0.5);
+  }
+  button.primary {
+    background: linear-gradient(180deg, #c9a227, #a8841e);
+    color: #111;
+    border: none;
+  }
+  .party, .battle-area { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin: 16px 0; }
+  .creature {
+    background: var(--panel);
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 10px;
+    text-align: center;
+    width: 140px;
+  }
+  .creature img { width: 100px; height: 100px; object-fit: contain; border-radius: 8px; background: #333; }
+  .hp-bar {
+    height: 8px;
+    background: #333;
+    border-radius: 4px;
+    margin: 6px 0;
+    overflow: hidden;
+  }
+  .hp-fill { height: 100%; background: linear-gradient(90deg, #4caf50, #8bc34a); transition: width 0.3s; }
+  .hp-fill.low { background: linear-gradient(90deg, #f44336, #ff9800); }
+  .log {
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 10px;
+    height: 80px;
+    overflow-y: auto;
+    font-size: 13px;
+    margin: 10px 0;
+    color: #ddd;
+  }
+  .controls { margin-top: auto; }
+  .kiosk-hint { text-align: center; font-size: 12px; color: #666; margin-top: 12px; }
+  .fullscreen-btn {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    width: auto;
+    padding: 8px 12px;
+    font-size: 12px;
+    z-index: 100;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <button class="fullscreen-btn" onclick="toggleFullscreen()">⛶ Fullscreen</button>
+
+  <!-- TITLE -->
+  <div id="title" class="screen active">
+    <div class="logo"></div>
+    <h1>RIPZ Raiders</h1>
+    <p class="subtitle">Collect Owlies. Battle Scalpers. Protect the Nest.</p>
+    <div style="flex:1"></div>
+    <button class="primary" onclick="startGame()">Start Adventure</button>
+    <button onclick="showHowTo()">How to Play</button>
+    <p class="kiosk-hint">Designed for ohhRIPZ pack bar kiosk • Free original game</p>
+  </div>
+
+  <!-- HOW TO -->
+  <div id="howto" class="screen">
+    <h2>How to Play</h2>
+    <div class="log" style="height:auto; flex:1; margin:16px 0;">
+      <p>• You start with a Hootling companion.</p>
+      <p>• Talk to people on the pack floor. Some look friendly...</p>
+      <p>• ...until they get exposed as scalpers trying to buy out the stock.</p>
+      <p>• Challenge them: "You're not who you said you were! You're trying to buy out Walmart!"</p>
+      <p>• Battle their bootleg creatures with yours.</p>
+      <p>• <strong>Win</strong> → You save the stock for the kids.</p>
+      <p>• <strong>Lose</strong> → The scalper clears the shelves.</p>
+      <p style="margin-top:12px; color:#c9a227;">More maps, movement, and creatures coming next.</p>
+    </div>
+    <button onclick="showScreen('title')">Back</button>
+  </div>
+
+  <!-- OVERWORLD / ENCOUNTER SELECT -->
+  <div id="overworld" class="screen">
+    <h2>The Pack Floor</h2>
+    <p class="subtitle">Scalpers are lurking near the bar...</p>
+    <div class="party" id="player-party"></div>
+    <div class="controls">
+      <button class="primary" onclick="startWalmartEncounter()">Talk to Friendly Collector</button>
+      <button onclick="startBattle('scalper1')">Confront Scalper Bandit</button>
+      <button onclick="startBattle('scalper2')">Challenge Chrome Scalper</button>
+      <button onclick="showScreen('title')">Back to Title</button>
+    </div>
+  </div>
+
+  <!-- DIALOGUE / REVEAL -->
+  <div id="dialogue" class="screen">
+    <h2>Near the Walmart Aisle</h2>
+    <div class="party">
+      <div class="creature">
+        <div style="width:100px;height:100px;background:#333;border-radius:8px;margin:0 auto;"></div>
+        <div id="npc-label">Friendly Collector</div>
+      </div>
+    </div>
+    <div class="log" id="dialogue-log" style="height:140px; flex:1;">
+      A guy in a hoodie walks up smiling...
+    </div>
+    <div class="controls">
+      <button id="dialogue-next" class="primary" onclick="advanceDialogue()">Continue</button>
+    </div>
+  </div>
+
+  <!-- BATTLE -->
+  <div id="battle" class="screen">
+    <h2 id="battle-title">Battle!</h2>
+    <div class="battle-area">
+      <div class="creature" id="player-creature">
+        <div style="width:100px;height:100px;background:#555;border-radius:8px;margin:0 auto;"></div>
+        <div id="p-name">Hootling</div>
+        <div class="hp-bar"><div class="hp-fill" id="p-hp" style="width:100%"></div></div>
+        <div id="p-hp-text">HP 30/30</div>
+      </div>
+      <div class="creature" id="enemy-creature">
+        <div style="width:100px;height:100px;background:#333;border-radius:8px;margin:0 auto;"></div>
+        <div id="e-name">Scalper</div>
+        <div class="hp-bar"><div class="hp-fill" id="e-hp" style="width:100%"></div></div>
+        <div id="e-hp-text">HP 40/40</div>
+      </div>
+    </div>
+    <div class="log" id="battle-log">A scalper steps up with a bootleg creature!</div>
+    <div class="controls" id="battle-controls">
+      <button onclick="useMove('peck')">Peck</button>
+      <button onclick="useMove('hoot')">Hoot Blast</button>
+      <button onclick="useMove('defend')">Defend</button>
+    </div>
+    <button id="continue-btn" style="display:none" class="primary" onclick="endBattle()">Continue</button>
+  </div>
+</div>
+
+<script>
+const creatures = {
+  hootling: { name: "Hootling", img: "hootling.jpg", maxHp: 30, atk: 8, def: 4, moves: ["peck", "hoot"] },
+  chrome: { name: "Chrome Owl", img: "chrome-owl.jpg", maxHp: 45, atk: 12, def: 6, moves: ["peck", "hoot", "goldstrike"] },
+  bootleg: { name: "Bootleg Bird", img: "hootling.jpg", maxHp: 28, atk: 7, def: 3 },
+  fakechrome: { name: "Fake Chrome", img: "chrome-owl.jpg", maxHp: 38, atk: 10, def: 5 }
+};
+
+let player = { ...creatures.hootling, hp: 30 };
+let enemy = null;
+let defending = false;
+let currentEncounter = null;
+let dialogueStep = 0;
+
+const walmartDialogue = [
+  "Hey man, nice Hootling! I'm just a regular collector looking for a good deal for my kids.",
+  "Yeah, just grabbing a few packs. Nothing crazy.",
+  "Wait... is that a whole cart of product?",
+  "You're not who you said you were! You're trying to buy out Walmart!",
+  "Those packs are for the kids, not your flip!",
+  "Send out your creature. Let's settle this."
+];
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function startGame() {
+  player = { ...creatures.hootling, hp: creatures.hootling.maxHp };
+  renderParty();
+  showScreen('overworld');
+}
+
+function showHowTo() { showScreen('howto'); }
+
+function renderParty() {
+  const el = document.getElementById('player-party');
+  el.innerHTML = `
+    <div class="creature">
+      <div style="width:100px;height:100px;background:#555;border-radius:8px;margin:0 auto;"></div>
+      <div>${player.name}</div>
+      <div class="hp-bar"><div class="hp-fill" style="width:${(player.hp/player.maxHp)*100}%"></div></div>
+      <div>${player.hp}/${player.maxHp}</div>
+    </div>
+  `;
+}
+
+function startWalmartEncounter() {
+  currentEncounter = 'walmart';
+  dialogueStep = 0;
+  document.getElementById('npc-label').textContent = 'Friendly Collector';
+  document.getElementById('dialogue-log').textContent = walmartDialogue[0];
+  document.getElementById('dialogue-next').textContent = 'Continue';
+  showScreen('dialogue');
+}
+
+function advanceDialogue() {
+  dialogueStep++;
+  if (dialogueStep < walmartDialogue.length) {
+    document.getElementById('dialogue-log').textContent = walmartDialogue[dialogueStep];
+    if (dialogueStep === 3) {
+      document.getElementById('npc-label').textContent = 'EXPOSED SCALPER';
+    }
+  } else {
+    startBattle('walmart');
+  }
+}
+
+function startBattle(type) {
+  currentEncounter = type;
+  if (type === 'scalper1') {
+    enemy = { ...creatures.bootleg, hp: creatures.bootleg.maxHp, name: "Bootleg Bird", trainer: "Scalper" };
+  } else if (type === 'scalper2') {
+    enemy = { ...creatures.fakechrome, hp: creatures.fakechrome.maxHp, name: "Fake Chrome", trainer: "Chrome Scalper" };
+  } else if (type === 'walmart') {
+    enemy = { ...creatures.bootleg, hp: 35, name: "Bootleg Bird", trainer: "Exposed Scalper", atk: 9 };
+  }
+  defending = false;
+  document.getElementById('battle-title').textContent = `vs ${enemy.trainer}`;
+  document.getElementById('p-name').textContent = player.name;
+  document.getElementById('e-name').textContent = enemy.name;
+  updateHp();
+  document.getElementById('battle-log').textContent = `${enemy.trainer} sends out ${enemy.name}!`;
+  document.getElementById('battle-controls').style.display = 'block';
+  document.getElementById('continue-btn').style.display = 'none';
+  showScreen('battle');
+}
+
+function updateHp() {
+  const pPct = Math.max(0, (player.hp / player.maxHp) * 100);
+  const ePct = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
+  const pBar = document.getElementById('p-hp');
+  const eBar = document.getElementById('e-hp');
+  pBar.style.width = pPct + '%';
+  eBar.style.width = ePct + '%';
+  pBar.classList.toggle('low', pPct < 30);
+  eBar.classList.toggle('low', ePct < 30);
+  document.getElementById('p-hp-text').textContent = `HP ${Math.max(0, player.hp)}/${player.maxHp}`;
+  document.getElementById('e-hp-text').textContent = `HP ${Math.max(0, enemy.hp)}/${enemy.maxHp}`;
+}
+
+function log(msg) {
+  const el = document.getElementById('battle-log');
+  el.textContent = msg + '\n' + el.textContent;
+}
+
+function useMove(move) {
+  if (!enemy || player.hp <= 0 || enemy.hp <= 0) return;
+  document.getElementById('battle-controls').style.display = 'none';
+
+  let dmg = 0;
+  let text = '';
+  if (move === 'peck') {
+    dmg = Math.max(1, player.atk - enemy.def + Math.floor(Math.random()*4));
+    text = `${player.name} uses Peck! ${dmg} damage.`;
+  } else if (move === 'hoot') {
+    dmg = Math.max(1, Math.floor(player.atk * 1.4) - enemy.def);
+    text = `${player.name} uses Hoot Blast! ${dmg} damage.`;
+  } else if (move === 'defend') {
+    defending = true;
+    text = `${player.name} braces for impact!`;
+  } else if (move === 'goldstrike') {
+    dmg = Math.max(1, Math.floor(player.atk * 1.6) - enemy.def);
+    text = `${player.name} uses Gold Strike! ${dmg} damage.`;
+  }
+
+  if (dmg > 0) enemy.hp -= dmg;
+  log(text);
+  updateHp();
+
+  setTimeout(() => {
+    if (enemy.hp <= 0) {
+      if (currentEncounter === 'walmart') {
+        log(`You win! The scalper backs off. You saved the stock for the kids!`);
+      } else {
+        log(`${enemy.name} fainted! You win!`);
+      }
+      document.getElementById('continue-btn').style.display = 'block';
+      return;
+    }
+    const eDmg = Math.max(1, enemy.atk - player.def + Math.floor(Math.random()*3));
+    const finalDmg = defending ? Math.floor(eDmg * 0.5) : eDmg;
+    player.hp -= finalDmg;
+    defending = false;
+    log(`${enemy.name} attacks! ${finalDmg} damage.`);
+    updateHp();
+
+    if (player.hp <= 0) {
+      if (currentEncounter === 'walmart') {
+        log(`You lost... The scalper buys all the stock. The kids get nothing.`);
+      } else {
+        log(`${player.name} fainted... The scalper gets away.`);
+      }
+      document.getElementById('continue-btn').style.display = 'block';
+    } else {
+      document.getElementById('battle-controls').style.display = 'block';
+    }
+  }, 700);
+}
+
+function endBattle() {
+  if (player.hp > 0) {
+    player.hp = Math.min(player.maxHp, player.hp + 8);
+  } else {
+    player.hp = Math.floor(player.maxHp * 0.5);
+  }
+  renderParty();
+  showScreen('overworld');
+}
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen();
+  }
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+});
+</script>
+</body>
+</html>
