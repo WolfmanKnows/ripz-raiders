@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>RIPZ Raiders — ohhRIPZ</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <style>
   :root {
     --bg: #0d0e12;
@@ -14,50 +14,61 @@
     --accent: #e75492;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
+  html, body {
     background: var(--bg);
     color: var(--text);
     font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-    min-height: 100vh;
-    overflow: hidden;
+    height: 100%;
+    min-height: 100dvh;
+    overflow-x: hidden;
     user-select: none;
+    -webkit-tap-highlight-color: transparent;
   }
   #app {
     max-width: 480px;
     margin: 0 auto;
-    min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
     background: linear-gradient(180deg, #111318 0%, #0d0e12 100%);
+    padding-bottom: env(safe-area-inset-bottom, 20px);
   }
-  .screen { display: none; flex: 1; flex-direction: column; padding: 16px; }
+  .screen {
+    display: none;
+    flex: 1;
+    flex-direction: column;
+    padding: 16px 16px 32px 16px;
+    min-height: 100dvh;
+    overflow-y: auto;
+  }
   .screen.active { display: flex; }
-  h1, h2 { color: var(--gold-bright); text-align: center; letter-spacing: 0.5px; }
+  h1, h2 { color: var(--gold-bright); text-align: center; letter-spacing: 0.5px; margin-top: 8px; }
   .logo {
-    width: 180px;
-    margin: 20px auto;
+    width: 140px;
+    margin: 12px auto;
     display: block;
     border-radius: 12px;
     box-shadow: 0 0 30px rgba(201,162,39,0.4);
     background: #c9a227;
-    height: 80px;
+    height: 70px;
   }
-  .subtitle { text-align: center; color: #aaa; margin-bottom: 24px; font-size: 14px; }
+  .subtitle { text-align: center; color: #aaa; margin-bottom: 16px; font-size: 14px; }
   button {
     background: linear-gradient(180deg, #2a2d38, #1e2028);
     border: 1px solid var(--gold);
     color: var(--gold-bright);
-    padding: 14px 20px;
+    padding: 16px 20px;
     border-radius: 10px;
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 600;
     cursor: pointer;
-    margin: 6px 0;
+    margin: 8px 0;
     width: 100%;
+    min-height: 48px;
     transition: transform 0.1s, box-shadow 0.2s;
   }
-  button:hover, button:active {
-    transform: translateY(-1px);
+  button:active {
+    transform: scale(0.98);
     box-shadow: 0 0 16px rgba(201,162,39,0.5);
   }
   button.primary {
@@ -65,7 +76,7 @@
     color: #111;
     border: none;
   }
-  .party, .battle-area { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin: 16px 0; }
+  .party, .battle-area { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin: 12px 0; }
   .creature {
     background: var(--panel);
     border: 1px solid #333;
@@ -74,7 +85,14 @@
     text-align: center;
     width: 140px;
   }
-  .creature img { width: 100px; height: 100px; object-fit: contain; border-radius: 8px; background: #333; }
+  .creature img, .creature > div[style*="background"] {
+    width: 90px;
+    height: 90px;
+    object-fit: contain;
+    border-radius: 8px;
+    background: #333;
+    margin: 0 auto;
+  }
   .hp-bar {
     height: 8px;
     background: #333;
@@ -89,22 +107,31 @@
     border: 1px solid #333;
     border-radius: 8px;
     padding: 10px;
-    height: 80px;
+    height: 90px;
     overflow-y: auto;
     font-size: 13px;
     margin: 10px 0;
     color: #ddd;
   }
-  .controls { margin-top: auto; }
-  .kiosk-hint { text-align: center; font-size: 12px; color: #666; margin-top: 12px; }
+  .controls {
+    margin-top: auto;
+    padding-bottom: 12px;
+  }
+  .kiosk-hint { text-align: center; font-size: 12px; color: #666; margin-top: 8px; }
   .fullscreen-btn {
     position: fixed;
-    top: 10px;
-    right: 10px;
+    top: 12px;
+    right: 12px;
     width: auto;
     padding: 8px 12px;
-    font-size: 12px;
+    font-size: 13px;
+    min-height: auto;
     z-index: 100;
+  }
+  @media (max-height: 700px) {
+    .logo { height: 50px; width: 120px; margin: 8px auto; }
+    h1 { font-size: 1.6rem; }
+    .subtitle { margin-bottom: 8px; }
   }
 </style>
 </head>
@@ -118,9 +145,11 @@
     <h1>RIPZ Raiders</h1>
     <p class="subtitle">Collect Owlies. Battle Scalpers. Protect the Nest.</p>
     <div style="flex:1"></div>
-    <button class="primary" onclick="startGame()">Start Adventure</button>
-    <button onclick="showHowTo()">How to Play</button>
-    <p class="kiosk-hint">Designed for ohhRIPZ pack bar kiosk • Free original game</p>
+    <div class="controls">
+      <button class="primary" onclick="startGame()">Start Adventure</button>
+      <button onclick="showHowTo()">How to Play</button>
+      <p class="kiosk-hint">Designed for ohhRIPZ pack bar kiosk • Free original game</p>
+    </div>
   </div>
 
   <!-- HOW TO -->
@@ -136,7 +165,9 @@
       <p>• <strong>Lose</strong> → The scalper clears the shelves.</p>
       <p style="margin-top:12px; color:#c9a227;">More maps, movement, and creatures coming next.</p>
     </div>
-    <button onclick="showScreen('title')">Back</button>
+    <div class="controls">
+      <button onclick="showScreen('title')">Back</button>
+    </div>
   </div>
 
   <!-- OVERWORLD / ENCOUNTER SELECT -->
@@ -157,11 +188,11 @@
     <h2>Near the Walmart Aisle</h2>
     <div class="party">
       <div class="creature">
-        <div style="width:100px;height:100px;background:#333;border-radius:8px;margin:0 auto;"></div>
+        <div style="width:90px;height:90px;background:#333;border-radius:8px;margin:0 auto;"></div>
         <div id="npc-label">Friendly Collector</div>
       </div>
     </div>
-    <div class="log" id="dialogue-log" style="height:140px; flex:1;">
+    <div class="log" id="dialogue-log" style="height:120px; flex:1;">
       A guy in a hoodie walks up smiling...
     </div>
     <div class="controls">
@@ -174,13 +205,13 @@
     <h2 id="battle-title">Battle!</h2>
     <div class="battle-area">
       <div class="creature" id="player-creature">
-        <div style="width:100px;height:100px;background:#555;border-radius:8px;margin:0 auto;"></div>
+        <div style="width:90px;height:90px;background:#555;border-radius:8px;margin:0 auto;"></div>
         <div id="p-name">Hootling</div>
         <div class="hp-bar"><div class="hp-fill" id="p-hp" style="width:100%"></div></div>
         <div id="p-hp-text">HP 30/30</div>
       </div>
       <div class="creature" id="enemy-creature">
-        <div style="width:100px;height:100px;background:#333;border-radius:8px;margin:0 auto;"></div>
+        <div style="width:90px;height:90px;background:#333;border-radius:8px;margin:0 auto;"></div>
         <div id="e-name">Scalper</div>
         <div class="hp-bar"><div class="hp-fill" id="e-hp" style="width:100%"></div></div>
         <div id="e-hp-text">HP 40/40</div>
@@ -236,7 +267,7 @@ function renderParty() {
   const el = document.getElementById('player-party');
   el.innerHTML = `
     <div class="creature">
-      <div style="width:100px;height:100px;background:#555;border-radius:8px;margin:0 auto;"></div>
+      <div style="width:90px;height:90px;background:#555;border-radius:8px;margin:0 auto;"></div>
       <div>${player.name}</div>
       <div class="hp-bar"><div class="hp-fill" style="width:${(player.hp/player.maxHp)*100}%"></div></div>
       <div>${player.hp}/${player.maxHp}</div>
